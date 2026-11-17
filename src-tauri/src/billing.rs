@@ -25,8 +25,8 @@ pub const FREE_HISTORY_DAYS: i64 = 7;
 const OFFLINE_CACHE_MS: i64 = 7 * 24 * 60 * 60 * 1000; // 7 dias
 const MINUTES_SAVED_PER_ANALYSIS: u64 = 10;
 
-// Substitua pelo seu Stripe Payment Link e pelo domínio da sua API na Vercel.
-const STRIPE_CHECKOUT_URL: &str = "https://buy.stripe.com/seu-payment-link";
+// Payment Link real da Stripe (Stackly Pro - $2.99/mo) e URL da API de licença na Vercel.
+const STRIPE_CHECKOUT_URL: &str = "https://buy.stripe.com/3cI7sLfzU1QL5ja4BS1RC00";
 const STRIPE_LICENSE_API_URL: &str = "https://stackly.vercel.app/api/stripe/license";
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

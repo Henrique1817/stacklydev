@@ -60,7 +60,7 @@
     "updater": {
       "pubkey": "COLE_AQUI_A_CHAVE_PUBLICA_GERADA_COM_TAURI_SIGNER",
       "endpoints": [
-        "https://github.com/SEU_USUARIO/stackly/releases/latest/download/latest.json"
+        "https://github.com/Henrique1817/stacklydev/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"
