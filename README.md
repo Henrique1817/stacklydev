@@ -1,105 +1,156 @@
 # Stackly
 
-App desktop para **Windows** e **macOS** feito com Tauri 2 + React + TypeScript + Vite + Tailwind CSS v4.
+**Paste the error. Understand in 3 seconds.**
+
+Stackly is a lightweight, native desktop assistant for **Windows** and **macOS** that lives in your system tray / menu bar and turns raw stack traces, build failures, and CI logs into clear, actionable diagnoses.
+
+---
+
+## What Problem Does It Solve?
+
+When something breaks in your terminal or CI, the usual workflow is slow and risky:
+1. You copy a messy log and switch to a browser tab.
+2. You accidentally paste `.env` secrets, database URLs, JWTs, or internal IPs into a third-party chat.
+3. You read walls of markdown instead of a direct answer.
+4. Next week, the same bug happens again and you waste time and API tokens solving it from scratch.
+
+**Stackly fixes all four:**
+- **Instant access:** summon it from anywhere with a global shortcut (`Cmd+Shift+E` / `Ctrl+Shift+E`) or click the tray icon.
+- **Privacy first:** a local sanitizer masks tokens, passwords, emails, IPs, URL credentials, and `.env` values *before* anything leaves your machine — and shows you the exact outgoing payload.
+- **Bring Your Own Key (or run 100% offline):** connect your own OpenAI or Anthropic key (stored in macOS Keychain / Windows Credential Manager, never in plain text) or point to a local **Ollama** model.
+- **Structured answers, streamed live:** detects the error stack (Node/TypeScript, Python, Prisma, Docker, PostgreSQL, Next.js, GitHub Actions) and streams JSON cards with *Probable cause*, *Where to look*, *Steps to fix*, and copyable commands/code.
+- **Bug memory:** saves analyses in local SQLite with project tags and 👍/👎 feedback, generating a normalized signature (stripping paths, line numbers, and hashes) and matching similar past errors via trigrams *before* calling the AI.
+
+---
+
+## Plans
+
+| Feature | Free ($0) | Pro ($2.99/mo via Stripe) |
+|---|---|---|
+| Daily analyses | 5 / day | Unlimited |
+| History | Last 7 days | Full searchable history |
+| Local secret sanitizer & BYOK / Ollama | Included | Included |
+| Bug memory (trigram matching) | — | Included |
+| Global shortcut (`⌘⇧E` / `Ctrl+Shift+E`) | — | Included |
+| Offline license cache | — | 7 days |
+
+---
+
+## Platform Behavior (Windows & macOS)
 
 | | Windows | macOS |
 |---|---|---|
-| Ícone | Bandeja do sistema (ao lado do relógio) | Barra de menu (ícone *template*) |
-| Dock / barra de tarefas | Janela aparece normalmente quando aberta | Sem ícone no Dock (`ActivationPolicy::Accessory`) |
-| Clique esquerdo no ícone | Mostra/esconde a janela | Abre o menu |
-| Menu | Abrir · Configurações · Iniciar com o Windows · Sair | Abrir · Configurações · Abrir ao iniciar sessão · Sair |
-| Atalho global (Pro) | `Ctrl+Shift+E` | `Cmd+Shift+E` |
+| Icon | System tray (next to the clock) | Menu bar (*template* icon, adapts to light/dark) |
+| Dock / Taskbar | Window appears normally when open | No Dock icon (`ActivationPolicy::Accessory`) |
+| Left-click icon | Toggles main window | Opens menu |
+| Tray menu | Open · Settings · Start with Windows · Quit | Open · Settings · Launch at login · Quit |
+| Global shortcut (Pro) | `Ctrl+Shift+E` | `Cmd+Shift+E` |
 
-> Linux não é suportado: a compilação falha propositalmente com `compile_error!`.
+Closing the window hides it to the tray; the app only exits when you click **Quit**.
 
-## Pré-requisitos (desenvolvimento local)
+> Linux is intentionally unsupported (`compile_error!` at build time).
+
+---
+
+## Tech Stack
+
+- **Desktop App:** Tauri 2 (Rust) + React 19 + TypeScript + Vite + Tailwind CSS v4
+- **Local Storage & Security:** SQLite (`rusqlite` bundled), OS Keychain (`keyring`), streaming HTTP (`reqwest`)
+- **Landing Page & APIs (`landing/`):** Next.js 15 + Tailwind CSS v4 (Vercel), Supabase (waitlist), Stripe (Pro subscriptions & Stripe Tax)
+
+---
+
+## Local Development
+
+### Prerequisites
 
 - Node.js 20+
 - Rust (stable) — https://rustup.rs
-- **Windows:** Microsoft C++ Build Tools ("Desenvolvimento para desktop com C++") e WebView2 (já vem no Windows 10/11)
+- **Windows:** Microsoft C++ Build Tools (*Desktop development with C++*) and WebView2 (pre-installed on Windows 10/11)
 - **macOS:** Xcode Command Line Tools (`xcode-select --install`)
 
-## Comandos
+### Commands
 
 ```bash
 npm install
-npm run tauri dev      # desenvolvimento
-npm run tauri build    # instaladores: .msi/.exe (Windows) ou .app/.dmg (macOS)
-npm run icons          # regenera ícones a partir de app-icon.svg, tray-icon.svg e tray-template.svg
+npm run tauri dev      # start desktop app in dev mode
+npm run tauri build    # build installers: .exe/.msi (Windows) or .app/.dmg (macOS)
+npm run build          # typecheck + build frontend only
+npm run icons          # regenerate icons from app-icon.svg, tray-icon.svg, tray-template.svg
 ```
 
 ---
 
-## Build, Assinatura e Auto-Update (GitHub Actions)
+## Build, Signing & Auto-Update (GitHub Actions)
 
-O workflow [release.yml](.github/workflows/release.yml) gera automaticamente:
-- **macOS:** `.dmg` universal (`universal-apple-darwin` = Apple Silicon + Intel), assinado e notarizado.
-- **Windows:** instaladores `.exe` (NSIS) e `.msi`.
-- **Auto-update:** `latest.json` e arquivos `.sig` publicados no GitHub Releases.
+The workflow [release.yml](.github/workflows/release.yml) builds:
+- **macOS:** universal `.dmg` (`universal-apple-darwin` = Apple Silicon + Intel), signed and notarized.
+- **Windows:** `.exe` (NSIS) and `.msi` installers.
+- **Auto-update:** `latest.json` and `.sig` files published to GitHub Releases.
 
-### 1. Chaves do Tauri Auto-Updater (obrigatório)
+### 1. Tauri Auto-Updater Keys (Required)
 
-Gere um par de chaves localmente:
+Generate a signing keypair locally:
 
 ```bash
 npx tauri signer generate -w ~/.tauri/stackly.key
 ```
 
-1. Copie a **chave pública** exibida no terminal e cole em `plugins.updater.pubkey` no arquivo `src-tauri/tauri.conf.json`.
-2. Atualize `plugins.updater.endpoints` em `src-tauri/tauri.conf.json` com o seu usuário/organização do GitHub:
+1. Paste the generated **public key** into `plugins.updater.pubkey` in `src-tauri/tauri.conf.json`.
+2. Update `plugins.updater.endpoints` in `src-tauri/tauri.conf.json` with your GitHub repository:
    ```json
-   "https://github.com/SEU_USUARIO/stackly/releases/latest/download/latest.json"
+   "https://github.com/YOUR_USER/stackly/releases/latest/download/latest.json"
    ```
-3. Nos **Secrets** do repositório GitHub (*Settings → Secrets and variables → Actions*), adicione:
-   - `TAURI_SIGNING_PRIVATE_KEY`: conteúdo completo do arquivo `~/.tauri/stackly.key`.
-   - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`: senha definida ao gerar a chave (ou vazio se não colocou senha).
+3. Add these **Repository Secrets** on GitHub (*Settings → Secrets and variables → Actions*):
+   - `TAURI_SIGNING_PRIVATE_KEY`: full contents of `~/.tauri/stackly.key`
+   - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`: key password (or empty if none)
 
-### 2. Certificado e Notarização do macOS
+### 2. macOS Signing & Notarization
 
-1. No portal [Apple Developer](https://developer.apple.com/account/resources/certificates/list), crie um certificado **Developer ID Application** e instale no **Acesso às Chaves (Keychain Access)** do seu Mac.
-2. No Keychain Access, clique com o botão direito no certificado (+ chave privada) → **Exportar** como `.p12` com uma senha.
-3. Converta o `.p12` para base64 no terminal do Mac:
+1. Create a **Developer ID Application** certificate in the [Apple Developer Portal](https://developer.apple.com/account/resources/certificates/list) and install it in **Keychain Access**.
+2. Export the certificate + private key as a `.p12` file with a password.
+3. Base64-encode the `.p12`:
    ```bash
-   base64 -i Certificado.p12 | pbcopy
+   base64 -i Certificate.p12 | pbcopy
    ```
-4. Crie uma **Senha específica para app (App-Specific Password)** em [account.apple.com](https://account.apple.com) (Segurança → Senhas de apps).
-5. Adicione os secrets no GitHub:
-   - `APPLE_CERTIFICATE`: string base64 do `.p12`.
-   - `APPLE_CERTIFICATE_PASSWORD`: senha usada ao exportar o `.p12`.
-   - `APPLE_ID`: e-mail da sua conta Apple Developer.
-   - `APPLE_TEAM_ID`: Team ID de 10 caracteres (visível em *Membership* no portal da Apple).
-   - `APPLE_PASSWORD`: App-Specific Password gerada no passo 4.
+4. Create an **App-Specific Password** at [account.apple.com](https://account.apple.com).
+5. Add these GitHub Secrets:
+   - `APPLE_CERTIFICATE`: base64 string of `.p12`
+   - `APPLE_CERTIFICATE_PASSWORD`: password used when exporting `.p12`
+   - `APPLE_ID`: Apple Developer account email
+   - `APPLE_TEAM_ID`: 10-character Team ID
+   - `APPLE_PASSWORD`: App-Specific Password
 
-### 3. Assinatura de código no Windows (opcional)
+### 3. Windows Code Signing (Optional)
 
-Se você tiver um certificado Authenticode (`.pfx`):
+If you have an Authenticode `.pfx` certificate:
 
-1. Converta o `.pfx` para base64 no PowerShell:
+1. Base64-encode the `.pfx` in PowerShell:
    ```powershell
-   [Convert]::ToBase64String([IO.File]::ReadAllBytes("certificado.pfx")) | Set-Clipboard
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("certificate.pfx")) | Set-Clipboard
    ```
-2. Adicione os secrets no GitHub:
-   - `WINDOWS_CERTIFICATE`: string base64 do `.pfx`.
-   - `WINDOWS_CERTIFICATE_PASSWORD`: senha do `.pfx`.
+2. Add these GitHub Secrets:
+   - `WINDOWS_CERTIFICATE`: base64 string of `.pfx`
+   - `WINDOWS_CERTIFICATE_PASSWORD`: `.pfx` password
 
-Se esses dois secrets não estiverem configurados, o workflow ignora a assinatura Authenticode e gera o `.exe` e `.msi` normalmente.
+If these two secrets are omitted, the workflow skips Authenticode signing and still builds `.exe` and `.msi` installers.
 
-### 4. Como publicar um release
+### 4. Publishing a Release
 
 ```bash
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
-O workflow cria um **Draft Release** no GitHub com todos os instaladores, `.sig` e `latest.json`. Revise e clique em **Publish release**.
+The workflow creates a **Draft Release** on GitHub with installers, `.sig` files, and `latest.json`. Review and click **Publish release**.
 
 ---
 
-## Estrutura
+## Project Structure
 
-```
-src/                  Frontend React (Analisar, Histórico, Upgrade, Configurações)
-src-tauri/src/        Backend Rust (bandeja, AI streaming, keychain, SQLite, Lemon Squeezy, updater)
-landing/              Landing page em Next.js 15 + Tailwind + Supabase (deploy na Vercel)
-.github/workflows/    CI/CD de release para Windows e macOS
+```text
+src/                  React frontend (Analyze, History, Upgrade, Settings)
+src-tauri/src/        Rust backend (tray, AI streaming, keychain, SQLite, Stripe billing, updater)
+landing/              Next.js 15 + Tailwind landing page, Stripe license API & Supabase waitlist
+.github/workflows/    CI/CD release workflow for Windows and macOS
 ```
