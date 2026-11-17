@@ -1,0 +1,39 @@
+[package]
+name = "stackly"
+version = "0.1.0"
+description = "Stackly"
+authors = ["you"]
+edition = "2021"
+
+[lib]
+# O sufixo _lib evita conflito de nome entre lib e bin no Windows.
+name = "stackly_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+# Chamadas aos provedores de IA com streaming (a API key nunca passa pelo frontend).
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+# Keychain do macOS / Gerenciador de Credenciais do Windows.
+keyring = { version = "3", features = ["apple-native", "windows-native"] }
+# Histórico local em SQLite (bundled evita depender de libsqlite3 do sistema).
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
+
